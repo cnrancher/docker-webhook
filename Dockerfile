@@ -18,7 +18,7 @@ COPY        --from=build /usr/local/bin/webhook /usr/local/bin/webhook
 
 RUN         apk update \
         &&  apk upgrade \
-        &&  apk add curl wget vim bash \
+        &&  apk add curl wget vim bash jq \
         &&  curl -L --silent -o /usr/local/bin/kubectl https://www.cnrancher.com/download/kubectl/kubectl_amd64-linux  \
         &&  mkdir -p /etc/webhook \
         &&  touch /etc/webhook/hooks.json \
