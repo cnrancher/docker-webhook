@@ -1,4 +1,3 @@
-# Dockerfile for https://github.com/adnanh/webhook
 FROM        golang:alpine3.8 AS build
 WORKDIR     /go/src/github.com/adnanh/webhook
 ENV         WEBHOOK_VERSION 2.6.9
@@ -12,7 +11,7 @@ RUN         curl -L --silent -o webhook.tar.gz https://github.com/adnanh/webhook
             rm -rf /go
 
 FROM        alpine:3.8
-RUN         apk update && apk upgrade && apk add curl wget vim bash && mkdir -p /etc/webhook && touch /etc/webhook/hook.json
+RUN         apk update && apk upgrade && apk add curl wget vim bash && mkdir -p /etc/webhook && touch /etc/webhook/hooks.json
 COPY        --from=build /usr/local/bin/webhook /usr/local/bin/webhook
 VOLUME      ["/etc/webhook"]
 WORKDIR     /etc/webhook
