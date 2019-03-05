@@ -14,7 +14,7 @@ RUN     curl -L --silent -o webhook.tar.gz https://github.com/adnanh/webhook/arc
 
 FROM    alpine:3.8
 
-ENV     DUMB_VERSION v1.2.2
+ENV     DUMB_VERSION 1.2.2
 
 
 COPY    --from=build /usr/local/bin/webhook /usr/local/bin/webhook
