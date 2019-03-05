@@ -27,9 +27,7 @@ RUN     apk update \
     &&  chmod +x /usr/local/bin/dumb-init /usr/local/bin/start.sh /usr/local/bin/kubectl \ 
     &&  mkdir -p /etc/webhook \
     &&  touch /etc/webhook/hooks.json \
-    &&  rm -rf /var/cache/apk/*  \
-    &&  echo 104857600 > /proc/sys/fs/inotify/max_user_watches
-
+    &&  rm -rf /var/cache/apk/*  
 
 VOLUME  /etc/webhook
 WORKDIR /etc/webhook
