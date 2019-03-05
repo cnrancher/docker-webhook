@@ -38,4 +38,5 @@ EXPOSE  9000
 #CMD         ["-verbose", "-hooks=/etc/webhook/hooks.json", "-hotreload"]
 
 ENTRYPOINT   ["/usr/bin/dumb-init", "--"]
+
 CMD          ["bash", "-c", "/usr/local/bin/webhook -verbose -hooks=/etc/webhook/hooks.json -hotreload && exec start.sh"]
