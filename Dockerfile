@@ -14,7 +14,8 @@ RUN     curl -L --silent -o webhook.tar.gz https://github.com/adnanh/webhook/arc
 
 FROM    alpine:3.8
 
-ENV     dumb-init-version v1.2.2
+ENV     DUMB_VERSION v1.2.2
+
 
 COPY    --from=build /usr/local/bin/webhook /usr/local/bin/webhook
 COPY    start.sh /usr/local/bin/start.sh
@@ -23,7 +24,7 @@ RUN     apk update \
     &&  apk upgrade \
     &&  apk add curl wget vim bash jq inotify-tools \
     &&  curl -L --silent -o /usr/local/bin/kubectl https://www.cnrancher.com/download/kubectl/kubectl_amd64-linux  \
-    &&  wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v${dumb-init-version}/dumb-init_${dumb-init-version}_amd64 \
+    &&  wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v${DUMB_VERSION}/dumb-init_${DUMB_VERSION}_amd64 \
     &&  chmod +x /usr/local/bin/dumb-init /usr/local/bin/start.sh /usr/local/bin/kubectl \ 
     &&  mkdir -p /etc/webhook \
     &&  touch /etc/webhook/hooks.json \
