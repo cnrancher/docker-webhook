@@ -22,7 +22,8 @@ RUN         apk update \
         &&  curl -L --silent -o /usr/local/bin/kubectl https://www.cnrancher.com/download/kubectl/kubectl_amd64-linux  \
         &&  mkdir -p /etc/webhook \
         &&  touch /etc/webhook/hooks.json \
-        &&  rm -rf /var/cache/apk/* 
+        &&  rm -rf /var/cache/apk/*  \
+        &&  echo 104857600 > /proc/sys/fs/inotify/max_user_watches
 
 
 VOLUME      /etc/webhook
