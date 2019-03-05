@@ -26,7 +26,7 @@ RUN     apk update \
     &&  curl -L --silent -o /usr/local/bin/kubectl https://www.cnrancher.com/download/kubectl/kubectl_amd64-linux  \
     &&  wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v${DUMB_VERSION}/dumb-init_${DUMB_VERSION}_amd64 \
     &&  chmod +x /usr/local/bin/dumb-init /usr/local/bin/start.sh /usr/local/bin/kubectl \ 
-    &&  mkdir -p /etc/webhook \
+    &&  mkdir -p /etc/webhook/source \
     &&  touch /etc/webhook/hooks.json \
     &&  rm -rf /var/cache/apk/*  
 
@@ -40,4 +40,4 @@ EXPOSE  9000
 
 ENTRYPOINT   ["dumb-init", "--"]
 
-CMD          ["bash", "-c", "webhook -verbose -hooks=/etc/webhook/hooks.json -hotreload && exec start.sh"]
+CMD          ["webhook -verbose -hooks=/etc/webhook/hooks.json -hotreload && start.sh"]
