@@ -1,5 +1,7 @@
 #!/bin/bash  
 
+webhook -verbose -hooks=/etc/webhook/hooks.json -hotreload &
+
 src=/etc/webhook/source
 dest=/etc/webhook
  
