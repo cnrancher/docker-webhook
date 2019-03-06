@@ -41,4 +41,4 @@ EXPOSE  9000
 
 ENTRYPOINT   ["dumb-init", "--"]
 
-CMD          ["bash", "/start.sh "]
+CMD          ["bash", "-c", "/start.sh "]
