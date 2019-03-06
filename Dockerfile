@@ -40,4 +40,4 @@ EXPOSE  9000
 
 ENTRYPOINT   ["dumb-init", "--"]
 
-CMD          ["webhook -verbose -hooks=/etc/webhook/hooks.json -hotreload && start.sh"]
+CMD          ["/usr/local/bin/start.sh "]
