@@ -2,4 +2,4 @@
 
 bash /monitoring.sh  &
 
-webhook -verbose -hooks=/etc/webhook/hooks.json -hotreload $WEBHOOK_
+webhook -verbose -hooks=/etc/webhook/hooks.json -hotreload $WEBHOOK_CMD
