@@ -1,5 +1,7 @@
 #!/bin/bash  
 
+CONFIG=${CONFIG:-/etc/webhook/hooks.json}
+
 bash /monitoring.sh  &
 
-webhook -verbose -hooks=/etc/webhook/hooks.json -hotreload $WEBHOOK_CMD
+webhook -verbose -hooks=${CONFIG} -hotreload ${WEBHOOK_CMD}
