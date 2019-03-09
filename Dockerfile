@@ -20,13 +20,14 @@ ENV     DUMB_VERSION 1.2.2
 COPY    --from=build /usr/local/bin/webhook /usr/local/bin/webhook
 COPY    start.sh /
 COPY    monitoring.sh /
+COPY    webhooks.sh /bin
 
 RUN     apk update \
     &&  apk upgrade \
     &&  apk add curl wget vim bash jq inotify-tools \
     &&  curl -L --silent -o /usr/local/bin/kubectl https://www.cnrancher.com/download/kubectl/kubectl_amd64-linux  \
     &&  wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v${DUMB_VERSION}/dumb-init_${DUMB_VERSION}_amd64 \
-    &&  chmod +x /usr/local/bin/dumb-init /start.sh /monitoring.sh  /usr/local/bin/kubectl \ 
+    &&  chmod +x /usr/local/bin/dumb-init /start.sh /monitoring.sh  /usr/local/bin/kubectl /bin/webhooks.sh \ 
     &&  mkdir -p /etc/webhook/source \
     &&  touch /etc/webhook/hooks.json \
     &&  rm -rf /var/cache/apk/*  
