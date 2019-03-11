@@ -10,12 +10,12 @@ else
 
     if [ x"${IMAGES_PULL_POLICY}" == x"Always" ]; then
         
-        kubectl -n $NS get $WORKLOAD -o json | jq --arg time $(date -Iseconds) '.spec.template.metadata += {"updateTimestamp": $time}' | kubectl -n $NS apply  -f -
+        kubectl -n $NS get $WORKLOAD -o json | jq --arg time $(date -Iseconds) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | kubectl -n $NS apply  -f -
 
     else
 
         kubectl -n $NS get $WORKLOAD -o json | \
-        jq --arg time $(date -Iseconds) '.spec.template.metadata += {"updateTimestamp": $time}' | \
+        jq --arg time $(date -Iseconds) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
         jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}'| \
         kubectl -n $NS apply  -f -
     fi
