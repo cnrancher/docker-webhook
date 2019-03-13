@@ -1,0 +1,102 @@
+[
+    {
+        "id": "<webhooks_id>",
+        "execute-command": "/webhooks.sh",
+        "command-working-directory": "/home",
+        "response-message": "I got the payload!",
+        "include-command-output-in-response": true,
+        "include-command-output-in-response-on-error": true,
+        "trigger-rule-mismatch-http-response-code": 500,
+        "response-headers": 
+        [
+            {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+            }
+        ],
+        "pass-arguments-to-command": 
+        [
+            {
+                "source": "entire-payload"
+            }
+          ],
+        "pass-environment-to-command": 
+        [
+            {
+                "envname": "APP_NS",
+                "source": "url",
+                "name": "ns"
+            },
+            {
+                "envname": "APP_WORKLOAD",
+                "source": "url",
+                "name": "workload"
+            },
+            {
+                "envname": "APP_CONTAINER",
+                "source": "url",
+                "name": "container"
+            },
+            {
+                "envname": "REPO_TYPE",
+                "source": "url",
+                "name": "repo_type"
+            }
+        ],
+        "trigger-rule": 
+        {
+            "and": 
+            [
+                {
+                    "match": 
+                    {
+                        "type": "value",
+                        "value": "<token>",
+                        "parameter": 
+                        {
+                            "source": "url",
+                            "name": "token"
+                        }
+                    }
+                },
+                {
+                    "match": 
+                    {
+                        "type": "value",
+                        "value": "<namespaces>",
+                        "parameter": 
+                        {
+                            "source": "url",
+                            "name": "ns"
+                        }
+                    }
+                },
+                {
+                    "match": 
+                    {
+                        "type": "value",
+                        "value": "<workload>",
+                        "parameter": 
+                        {
+                            "source": "url",
+                            "name": "workload"
+                        }
+                    }
+                },
+                {
+                    "match": 
+                    {
+                        "type": "value",
+                        "value": "<container>",
+                        "parameter": 
+                        {
+                            "source": "url",
+                            "name": "container"
+                        }
+                    }
+                }
+                
+            ]
+        }
+    }
+]
