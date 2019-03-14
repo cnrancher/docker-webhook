@@ -39,7 +39,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 echo "镜像拉取策略为Always，添加注释触发滚动升级 "
                 # 如果镜像拉取策略是Always，则在.spec.template.metadata.annotations中添加注释用来触发滚动更新。
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
-                jq --arg images $( IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 kubectl -n $APP_NS apply -f -
                 exit $?
@@ -49,7 +49,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 echo "镜像拉取策略不为Always。先替换为Always，再添加注释进行滚动升级 "
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
                 jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
-                jq --arg images $( IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 kubectl -n $APP_NS apply -f -
                 exit $?
@@ -80,14 +80,14 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
                 echo "镜像拉取策略为Always，添加注释进行滚动升级 "
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
-                jq --arg images $( IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 kubectl -n $APP_NS apply  -f -
                 exit $?
             else
                 echo "镜像拉取策略不为Always。先替换为Always，再添加注释进行滚动升级 "
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
-                jq --arg images $( IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
                 kubectl -n $APP_NS apply  -f -
@@ -119,7 +119,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
                 echo "镜像拉取策略为Always，添加注释进行滚动升级 "
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
-                jq --arg images $( IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 kubectl -n $APP_NS apply  -f -
                 exit $?
@@ -127,7 +127,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 echo "镜像拉取策略不为Always。先替换为Always，再添加注释进行滚动升级 "
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
                 jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
-                jq --arg images $( IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 kubectl -n $APP_NS apply  -f -
                 exit $?
