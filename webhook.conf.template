@@ -41,6 +41,11 @@
                 "envname": "REPO_TYPE",
                 "source": "url",
                 "name": "repo_type"
+            },
+            {
+                "envname": "MAIL_TO",
+                "source": "string",
+                "name": "<MAIL_TO>"
             }
         ],
         "trigger-rule": 

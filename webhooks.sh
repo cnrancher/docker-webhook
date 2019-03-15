@@ -5,10 +5,55 @@ APP_NS=$( echo $APP_NS | tr 'A-Z' 'a-z' )
 APP_WORKLOAD=$( echo $APP_WORKLOAD | tr 'A-Z' 'a-z' )
 APP_CONTAINER=$( echo $APP_CONTAINER | tr 'A-Z' 'a-z' )
 REPO_TYPE=$( echo $REPO_TYPE | tr 'A-Z' 'a-z' )
+MAIL_TO=$( echo $MAIL_TO | tr 'A-Z' 'a-z' )
+
+MAIL_FROM=$( echo $MAIL_FROM | tr 'A-Z' 'a-z' )
+MAIL_PASSWORD=$( echo $MAIL_PASSWORD | base64 -d )
+MAIL_SMTP_SERVER=$( echo $MAIL_SMTP_SERVER | tr 'A-Z' 'a-z' )
+MAIL_SMTP_PORT=$MAIL_SMTP_PORT
+MAIL_CACERT=$MAIL_CACERT
+MAIL_TLS_CHECK=${MAIL_TLS_CHECK:-true}
+
+# 发送通知邮件
+
+send_mail ()
+{
+    cat << EOF > mail.txt
+    From: $MAIL_FROM
+    To: $MAIL_TO
+    Subject: Webhooks通知: $APP_WORKLOAD更新结果
+    Date: $( date -Iseconds )
+
+    `cat $APP_NS-$APP_CONTAINER`. 
+EOF
+
+    if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'true' ]]; then
+        curl --ssl --url 'smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT' \
+        --mail-from '$MAIL_FROM' --mail-rcpt '$MAIL_TO' \
+        --user '$MAIL_FROM:$MAIL_PASSWORD' \
+        --upload-file mail.txt
+    fi
+
+    if [[ $MAIL_CACERT && ! -z $MAIL_CACERT && $MAIL_TLS_CHECK == 'true' ]]; then
+        curl --ssl --url 'smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT' \
+        --mail-from '$MAIL_FROM' --mail-rcpt '$MAIL_TO' \
+        --cacert=/root/cacert.pem \
+        --user '$MAIL_FROM:$MAIL_PASSWORD' \
+        --upload-file mail.txt
+    fi
+
+    if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'false' ]]; then
+        curl --url 'smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT' \
+        --mail-from '$MAIL_FROM' --mail-rcpt '$MAIL_TO' \
+        --user '$MAIL_FROM:$MAIL_PASSWORD' \
+        --insecure \
+        --upload-file mail.txt
+    fi
+}
 
 # 检查是否为测试消息。dockerhub在添加webhooks条目时会触发测试webhooks消息，以下判断排除此消息。
 if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo $DATA_SOURCD | jq '.repository | has("name")' ) == 'true' && $( echo $DATA_SOURCD | jq '.repository | has("namespace")' ) == 'true' ]]; then
-        
+
     # 判断仓库类型
 
     # Aliyunhub
@@ -27,7 +72,12 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
         if [ x"${IMAGES_TAG}" != x"latest" ]; then
 
             echo "镜像标签不为latest,直接进行升级"
-            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record
+            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record > $APP_NS-$APP_CONTAINER
+
+            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                send_mail
+            fi
+
             exit $?
         else
             # 检查镜像拉取策略,对于镜像标签为latest的应用，需要设置镜像拉取策略为Always才能触发重新拉取镜像。
@@ -41,7 +91,12 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-                kubectl -n $APP_NS apply -f -
+                kubectl -n $APP_NS apply -f - > $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                    send_mail
+                fi
+
                 exit $?
 
             else 
@@ -51,7 +106,12 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-                kubectl -n $APP_NS apply -f -
+                kubectl -n $APP_NS apply -f - > $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                    send_mail
+                fi
+
                 exit $?
             fi
         fi
@@ -70,7 +130,12 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
         if [ x"${IMAGES_TAG}" != x"latest" ]; then
             echo "镜像标签不为latest,直接进行升级"
-            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record
+            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record > $APP_NS-$APP_CONTAINER
+
+            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                send_mail
+            fi
+
             exit $?
         else
             echo "镜像标签为latest"
@@ -82,7 +147,12 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-                kubectl -n $APP_NS apply  -f -
+                kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                    send_mail
+                fi
+
                 exit $?
             else
                 echo "镜像拉取策略不为Always。先替换为Always，再添加注释进行滚动升级 "
@@ -90,7 +160,12 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
-                kubectl -n $APP_NS apply  -f -
+                kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                    send_mail
+                fi
+
                 exit $?
             fi
         fi      
@@ -109,7 +184,12 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
         if [ x"${IMAGES_TAG}" != x"latest" ]; then
             echo "镜像标签不为latest,直接进行升级"
-            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record
+            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record > $APP_NS-$APP_CONTAINER
+
+            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                send_mail
+            fi
+
             exit $?
         else
             echo "镜像标签为latest"
@@ -121,7 +201,12 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-                kubectl -n $APP_NS apply  -f -
+                kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                    send_mail
+                fi
+
                 exit $?
             else
                 echo "镜像拉取策略不为Always。先替换为Always，再添加注释进行滚动升级 "
@@ -129,7 +214,12 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-                kubectl -n $APP_NS apply  -f -
+                kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                    send_mail
+                fi
+
                 exit $?
             fi
         fi      
