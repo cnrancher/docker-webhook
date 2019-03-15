@@ -33,7 +33,7 @@ EOF
         --user '$MAIL_FROM:$MAIL_PASSWORD' \
         --upload-file mail.txt
 
-        exit $?
+        break
     fi
 
     if [[ $MAIL_CACERT && ! -z $MAIL_CACERT && $MAIL_TLS_CHECK == 'true' ]]; then
@@ -43,7 +43,7 @@ EOF
         --user '$MAIL_FROM:$MAIL_PASSWORD' \
         --upload-file mail.txt
 
-        exit $?
+        break
     fi
 
     if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'false' ]]; then
@@ -53,7 +53,7 @@ EOF
         --insecure \
         --upload-file mail.txt
 
-        exit $?
+        break
     fi
 }
 
