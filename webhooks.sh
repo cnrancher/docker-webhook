@@ -28,28 +28,28 @@ send_mail ()
 EOF
 
     if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'true' ]]; then
-        curl --ssl --url 'smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT' \
-        --mail-from '$MAIL_FROM' --mail-rcpt '$MAIL_TO' \
-        --user '$MAIL_FROM:$MAIL_PASSWORD' \
+        curl --ssl --url "smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT" \
+        --mail-from "$MAIL_FROM" --mail-rcpt "$MAIL_TO" \
+        --user "$MAIL_FROM:$MAIL_PASSWORD" \
         --upload-file mail.txt
 
         break
     fi
 
     if [[ $MAIL_CACERT && ! -z $MAIL_CACERT && $MAIL_TLS_CHECK == 'true' ]]; then
-        curl --ssl --url 'smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT' \
-        --mail-from '$MAIL_FROM' --mail-rcpt '$MAIL_TO' \
+        curl --ssl --url "smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT" \
+        --mail-from "$MAIL_FROM" --mail-rcpt "$MAIL_TO" \
         --cacert=/root/cacert.pem \
-        --user '$MAIL_FROM:$MAIL_PASSWORD' \
+        --user "$MAIL_FROM:$MAIL_PASSWORD" \
         --upload-file mail.txt
 
         break
     fi
 
     if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'false' ]]; then
-        curl --url 'smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT' \
-        --mail-from '$MAIL_FROM' --mail-rcpt '$MAIL_TO' \
-        --user '$MAIL_FROM:$MAIL_PASSWORD' \
+        curl --url "smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT" \
+        --mail-from "$MAIL_FROM" --mail-rcpt "$MAIL_TO" \
+        --user "$MAIL_FROM:$MAIL_PASSWORD" \
         --insecure \
         --upload-file mail.txt
 
