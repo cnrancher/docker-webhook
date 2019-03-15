@@ -18,13 +18,13 @@ MAIL_TLS_CHECK=${MAIL_TLS_CHECK:-true}
 
 send_mail ()
 {
-    cat << EOF > mail.txt
-    From: $MAIL_FROM
-    To: $MAIL_TO
-    Subject: Webhooks通知: $APP_WORKLOAD更新结果
-    Date: $( date -Iseconds )
+cat << EOF > mail.txt
+From: $MAIL_FROM
+To: $MAIL_TO
+Subject: Webhooks通知: $APP_WORKLOAD更新结果
+Date: $( date -Iseconds )
 
-    `cat $APP_NS-$APP_CONTAINER`. 
+`cat $APP_NS-$APP_CONTAINER`. 
 EOF
 
     if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'true' ]]; then
@@ -78,7 +78,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
         if [ x"${IMAGES_TAG}" != x"latest" ]; then
 
             echo "镜像标签不为latest,直接进行升级"
-            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record > $APP_NS-$APP_CONTAINER
+            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record 2>&1 | tee $APP_NS-$APP_CONTAINER
 
             if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                 send_mail
@@ -97,7 +97,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-                kubectl -n $APP_NS apply -f - > $APP_NS-$APP_CONTAINER
+                kubectl -n $APP_NS apply -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
 
                 if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
@@ -112,7 +112,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-                kubectl -n $APP_NS apply -f - > $APP_NS-$APP_CONTAINER
+                kubectl -n $APP_NS apply -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
 
                 if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
@@ -136,7 +136,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
         if [ x"${IMAGES_TAG}" != x"latest" ]; then
             echo "镜像标签不为latest,直接进行升级"
-            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record > $APP_NS-$APP_CONTAINER
+            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record 2>&1 | tee $APP_NS-$APP_CONTAINER
 
             if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                 send_mail
@@ -153,7 +153,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-                kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
+                kubectl -n $APP_NS apply  -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
 
                 if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
@@ -166,7 +166,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
-                kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
+                kubectl -n $APP_NS apply  -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
 
                 if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
@@ -190,7 +190,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
         if [ x"${IMAGES_TAG}" != x"latest" ]; then
             echo "镜像标签不为latest,直接进行升级"
-            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record > $APP_NS-$APP_CONTAINER
+            kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record 2>&1 | tee $APP_NS-$APP_CONTAINER
 
             if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                 send_mail
@@ -207,7 +207,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-                kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
+                kubectl -n $APP_NS apply  -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
 
                 if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
@@ -220,7 +220,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
                 jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] += {"image": $images}' | \
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-                kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
+                kubectl -n $APP_NS apply  -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
 
                 if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
