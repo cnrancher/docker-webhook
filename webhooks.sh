@@ -32,6 +32,8 @@ EOF
         --mail-from '$MAIL_FROM' --mail-rcpt '$MAIL_TO' \
         --user '$MAIL_FROM:$MAIL_PASSWORD' \
         --upload-file mail.txt
+
+        exit $?
     fi
 
     if [[ $MAIL_CACERT && ! -z $MAIL_CACERT && $MAIL_TLS_CHECK == 'true' ]]; then
@@ -40,6 +42,8 @@ EOF
         --cacert=/root/cacert.pem \
         --user '$MAIL_FROM:$MAIL_PASSWORD' \
         --upload-file mail.txt
+
+        exit $?
     fi
 
     if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'false' ]]; then
@@ -48,6 +52,8 @@ EOF
         --user '$MAIL_FROM:$MAIL_PASSWORD' \
         --insecure \
         --upload-file mail.txt
+
+        exit $?
     fi
 }
 
@@ -74,7 +80,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             echo "镜像标签不为latest,直接进行升级"
             kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record > $APP_NS-$APP_CONTAINER
 
-            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                 send_mail
             fi
 
@@ -93,7 +99,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 kubectl -n $APP_NS apply -f - > $APP_NS-$APP_CONTAINER
 
-                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
                 fi
 
@@ -108,7 +114,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 kubectl -n $APP_NS apply -f - > $APP_NS-$APP_CONTAINER
 
-                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
                 fi
 
@@ -132,7 +138,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             echo "镜像标签不为latest,直接进行升级"
             kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record > $APP_NS-$APP_CONTAINER
 
-            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                 send_mail
             fi
 
@@ -149,7 +155,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
 
-                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
                 fi
 
@@ -162,7 +168,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
                 kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
 
-                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
                 fi
 
@@ -186,7 +192,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             echo "镜像标签不为latest,直接进行升级"
             kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record > $APP_NS-$APP_CONTAINER
 
-            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                 send_mail
             fi
 
@@ -203,7 +209,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
 
-                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
                 fi
 
@@ -216,7 +222,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
                 jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
                 kubectl -n $APP_NS apply  -f - > $APP_NS-$APP_CONTAINER
 
-                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
                     send_mail
                 fi
 
