@@ -21,10 +21,13 @@ send_mail ()
 cat << EOF > mail.txt
 From: $MAIL_FROM
 To: $MAIL_TO
-Subject: Webhooks通知: $APP_WORKLOAD更新结果
+Subject: Webhooks通知: $APP_NS-$APP_WORKLOAD 更新结果
 Date: $( date -Iseconds )
 
-`cat $APP_NS-$APP_CONTAINER`. 
+升级前镜像: $OLD_IMAGES
+升级后镜像: $IMAGES
+
+操作结果: `cat $APP_NS-$APP_CONTAINER`。
 EOF
 
     if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'true' ]]; then
@@ -33,7 +36,7 @@ EOF
         --user "$MAIL_FROM:$MAIL_PASSWORD" \
         --upload-file mail.txt
 
-        break
+        return
     fi
 
     if [[ $MAIL_CACERT && ! -z $MAIL_CACERT && $MAIL_TLS_CHECK == 'true' ]]; then
@@ -43,7 +46,7 @@ EOF
         --user "$MAIL_FROM:$MAIL_PASSWORD" \
         --upload-file mail.txt
 
-        break
+        return
     fi
 
     if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'false' ]]; then
@@ -53,7 +56,7 @@ EOF
         --insecure \
         --upload-file mail.txt
 
-        break
+        return
     fi
 }
 
@@ -73,6 +76,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
         REPO_FULL_NAME=$( echo $DATA_SOURCD | jq -r '.repository.repo_full_name' )
 
         IMAGES=$( echo "registry.$REPO_REGION.aliyuncs.com/$REPO_FULL_NAME:$IMAGES_TAG" )
+        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[].image' )
 
         # 判断镜像标签是否为latest，如果不是latest则直接通过kubectl set进行升级。
         if [ x"${IMAGES_TAG}" != x"latest" ]; then
@@ -133,6 +137,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
         REPO_FULL_NAME=$( echo $DATA_SOURCD | jq -r '.repository.repo_name' )
 
         IMAGES=$( echo "$REPO_FULL_NAME/$IMAGES_TAG" )
+        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[].image' )
 
         if [ x"${IMAGES_TAG}" != x"latest" ]; then
             echo "镜像标签不为latest,直接进行升级"
@@ -187,6 +192,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
         IMAGES_TAG=$( echo $DATA_SOURCD | jq -r '.push_data.tag' )
 
         IMAGES=$( echo "$IMAGES_URL/$IMAGES_NS/$IMAGES_NAME:$IMAGES_TAG" )
+        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[].image' )
 
         if [ x"${IMAGES_TAG}" != x"latest" ]; then
             echo "镜像标签不为latest,直接进行升级"
