@@ -30,7 +30,6 @@ Date: $( date -Iseconds )
 操作结果: `cat $APP_NS-$APP_CONTAINER`
 应用状态:
 
-
 EOF
     sleep 10
  
