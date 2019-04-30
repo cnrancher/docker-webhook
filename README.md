@@ -32,6 +32,6 @@ CMD ["-verbose", "-hooks=/etc/webhook/hooks.json", "-hotreload"]
 
 Now, after building your Docker image with `docker build -t my-webhook-image .`, you can start your container by running just:
 
-```shell
+```docker
 docker run -d -p 9000:9000 --name=webhook my-webhook-image
 ```
