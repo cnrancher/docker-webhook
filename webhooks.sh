@@ -36,7 +36,7 @@ EOF
     kubectl -n $APP_NS get pod | grep `echo $APP_WORKLOAD | awk -F/ '{print $2}'` | awk '{print $1}' | xargs kubectl -n $APP_NS describe pod >> mail.txt
 
     if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'true' ]]; then
-        curl --ssl --url "smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT" \
+        curl --silent --ssl --url "smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT" \
         --mail-from "$MAIL_FROM" --mail-rcpt "$MAIL_TO" \
         --user "$MAIL_FROM:$MAIL_PASSWORD" \
         --upload-file mail.txt
@@ -45,7 +45,7 @@ EOF
     fi
 
     if [[ $MAIL_CACERT && ! -z $MAIL_CACERT && $MAIL_TLS_CHECK == 'true' ]]; then
-        curl --ssl --url "smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT" \
+        curl --silent --ssl --url "smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT" \
         --mail-from "$MAIL_FROM" --mail-rcpt "$MAIL_TO" \
         --cacert=/root/cacert.pem \
         --user "$MAIL_FROM:$MAIL_PASSWORD" \
@@ -55,7 +55,7 @@ EOF
     fi
 
     if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'false' ]]; then
-        curl --url "smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT" \
+        curl --silent --url "smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT" \
         --mail-from "$MAIL_FROM" --mail-rcpt "$MAIL_TO" \
         --user "$MAIL_FROM:$MAIL_PASSWORD" \
         --insecure \
