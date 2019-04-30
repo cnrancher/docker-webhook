@@ -27,8 +27,14 @@ Date: $( date -Iseconds )
 升级前镜像: $OLD_IMAGES
 升级后镜像: $IMAGES
 
-操作结果: `cat $APP_NS-$APP_CONTAINER`。
+操作结果: `cat $APP_NS-$APP_CONTAINER`
+应用状态:
+
+
 EOF
+    sleep 10
+ 
+    kubectl -n $APP_NS get pod | grep `echo $APP_WORKLOAD | awk -F/ '{print $2}'` | awk '{print $1}' | xargs kubectl -n $APP_NS describe pod >> mail.txt
 
     if [[ $MAIL_TLS_CHECK && $MAIL_TLS_CHECK == 'true' ]]; then
         curl --ssl --url "smtps://$MAIL_SMTP_SERVER:$MAIL_SMTP_PORT" \
