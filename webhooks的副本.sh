@@ -106,14 +106,14 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             IMAGES=$( echo "registry.$REPO_REGION.aliyuncs.com/$REPO_FULL_NAME:$IMAGES_TAG" )
         fi
 
-        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER")'.image )
-        #OLD_IMAGES_TAG=$( echo $OLD_IMAGES | awk -F: '{print $2 }' )
+        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -cr '.spec.template.spec.containers[]' | grep -w $APP_CONTAINER | jq -r .image )
+        OLD_IMAGES_TAG=$( echo $OLD_IMAGES | awk -F: '{print $2 }' )
 
         # 如果镜像标签有改变，则直接通过kubectl set进行升级
 
-        if [[ x"${IMAGES}" != x"$OLD_IMAGES" ]]; then
+        if [[ x"${IMAGES_TAG}" != x"$OLD_IMAGES_TAG" ]]; then
 
-            echo "镜像有变化，通过kubectl set进行升级"
+            echo "镜像标签有变化，通过kubectl set进行升级"
 
             kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record 2>&1 | tee $APP_NS-$APP_CONTAINER
 
@@ -127,17 +127,43 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             # 如果镜像标签没有改变，则检查镜像拉取策略，需要设置镜像拉取策略为Always才能触发重新拉取镜像。
             # 如果镜像拉取策略是Always，则在.spec.template.metadata.annotations中添加注释用来触发滚动更新。
 
-            echo "镜像标签未改变，添加注释进行滚动升级"
- 
-            kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
-            jq '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"imagePullPolicy": "Always"}' | \
-            jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-            kubectl -n $APP_NS apply -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
+            echo "镜像标签未改变，判断镜像拉取策略"
 
-            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
-                send_mail
+            IMAGES_PULL_POLICY=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r .spec.template.spec.containers[].imagePullPolicy )
+
+            if [ x"${IMAGES_PULL_POLICY}" == x"Always" ]; then
+
+                echo "镜像拉取策略为Always，添加注释触发滚动升级 "
+
+                kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"image": $images}' | \
+                jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
+                kubectl -n $APP_NS apply -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
+                    send_mail
+                fi
+
+                exit $?
+
+            else 
+
+                # 如果镜像拉取策略不是Always，则先修改为Always，再在.spec.template.metadata.annotations中添加注释用来触发滚动更新。
+
+                echo "镜像拉取策略不为Always。先替换为Always，再添加注释进行滚动升级 "
+
+                kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
+                jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"image": $images}' | \
+                jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
+                kubectl -n $APP_NS apply -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
+                    send_mail
+                fi
+
+                exit $?
             fi
-            exit $?
         fi
     fi
 
@@ -163,10 +189,10 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
         IMAGES=$( echo "$REPO_FULL_NAME/$IMAGES_TAG" )
 
-        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER")'.image )
-        #OLD_IMAGES_TAG=$( echo $OLD_IMAGES | awk -F: '{print $2 }' )
+        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -cr '.spec.template.spec.containers[]' | grep -w $APP_CONTAINER | jq -r .image )
+        OLD_IMAGES_TAG=$( echo $OLD_IMAGES | awk -F: '{print $2 }' )
 
-        if [[ x"${IMAGES}" != x"$OLD_IMAGES" ]]; then
+        if [[ x"${IMAGES_TAG}" != x"$OLD_IMAGES_TAG" ]]; then
 
             echo "镜像标签有变化，通过kubectl set进行升级"
 
@@ -178,26 +204,44 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
             exit $?
         else
-        	
-            # 如果镜像标签没有改变，则检查镜像拉取策略，需要设置镜像拉取策略为Always才能触发重新拉取镜像。
-            # 如果镜像拉取策略是Always，则在.spec.template.metadata.annotations中添加注释用来触发滚动更新。
 
-            echo "镜像标签未改变，添加注释进行滚动升级"
- 
-            kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
-            jq '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"imagePullPolicy": "Always"}' | \
-            jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-            kubectl -n $APP_NS apply -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
+            echo "镜像标签未改变，判断镜像拉取策略"
 
-            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
-                send_mail
+            IMAGES_PULL_POLICY=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r .spec.template.spec.containers[].imagePullPolicy )
+
+            if [ x"${IMAGES_PULL_POLICY}" == x"Always" ]; then
+
+                echo "镜像拉取策略为Always，添加注释进行滚动升级 "
+
+                kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"image": $images}' | \
+                jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
+                kubectl -n $APP_NS apply  -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
+                    send_mail
+                fi
+
+                exit $?
+            else
+                echo "镜像拉取策略不为Always。先替换为Always，再添加注释进行滚动升级 "
+
+                kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"image": $images}' | \
+                jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
+                jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
+                kubectl -n $APP_NS apply  -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
+                    send_mail
+                fi
+
+                exit $?
             fi
-            exit $?
         fi      
     fi
 
     # custom
-
     if echo $REPO_TYPE | grep -qwi "custom" ; then
 
         # 判断是否存在升级的容器
@@ -217,10 +261,10 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
         IMAGES=$( echo "$IMAGES_URL/$IMAGES_NS/$IMAGES_NAME:$IMAGES_TAG" )
 
-        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER")'.image )
-        #OLD_IMAGES_TAG=$( echo $OLD_IMAGES | awk -F: '{print $2 }' )
+        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -cr '.spec.template.spec.containers[]' | grep -w $APP_CONTAINER | jq -r .image )
+        OLD_IMAGES_TAG=$( echo $OLD_IMAGES | awk -F: '{print $2 }' )
 
-        if [[ x"${IMAGES}" != x"$OLD_IMAGES" ]]; then
+        if [[ x"${IMAGES_TAG}" != x"$OLD_IMAGES_TAG" ]]; then
 
             echo "镜像标签有变化，通过kubectl set进行升级"
             
@@ -232,22 +276,40 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
             exit $?
         else
-        	
-            # 如果镜像标签没有改变，则检查镜像拉取策略，需要设置镜像拉取策略为Always才能触发重新拉取镜像。
-            # 如果镜像拉取策略是Always，则在.spec.template.metadata.annotations中添加注释用来触发滚动更新。
+            echo "镜像标签未改变，判断镜像拉取策略"
 
-            echo "镜像标签未改变，添加注释进行滚动升级"
- 
-            kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
-            jq '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"imagePullPolicy": "Always"}' | \
-            jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
-            kubectl -n $APP_NS apply -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
+            IMAGES_PULL_POLICY=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r .spec.template.spec.containers[].imagePullPolicy )
 
-            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
-                send_mail
+            if [ x"${IMAGES_PULL_POLICY}" == x"Always" ]; then
+
+                echo "镜像拉取策略为Always，添加注释进行滚动升级 "
+
+                kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"image": $images}' | \
+                jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
+                kubectl -n $APP_NS apply  -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
+                    send_mail
+                fi
+
+                exit $?
+            else
+                echo "镜像拉取策略不为Always。先替换为Always，再添加注释进行滚动升级 "
+
+                kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
+                jq '.spec.template.spec.containers[] += {"imagePullPolicy": "Always"}' | \
+                jq --arg images $( echo $IMAGES ) '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"image": $images}' | \
+                jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
+                kubectl -n $APP_NS apply  -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
+
+                if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
+                    send_mail
+                fi
+
+                exit $?
             fi
-            exit $?
-        fi
+        fi      
     fi
 
     echo "$REPO_TYPE 为不支持的仓库类型"
