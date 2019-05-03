@@ -110,7 +110,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
         # 如果镜像标签有改变，则直接通过kubectl set进行升级
 
-        if [[ x"${IMAGES}" != x"$OLD_IMAGES" ]]; then
+        if [ "${IMAGES}" != "$OLD_IMAGES" ]; then
 
             echo "镜像有变化，通过kubectl set进行升级"
 
@@ -164,7 +164,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
         OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER")'.image )
         #OLD_IMAGES_TAG=$( echo $OLD_IMAGES | awk -F: '{print $2 }' )
 
-        if [[ x"${IMAGES}" != x"$OLD_IMAGES" ]]; then
+        if [ "${IMAGES}" != "$OLD_IMAGES" ]; then
 
             echo "镜像标签有变化，通过kubectl set进行升级"
 
@@ -218,7 +218,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
         OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER")'.image )
         #OLD_IMAGES_TAG=$( echo $OLD_IMAGES | awk -F: '{print $2 }' )
 
-        if [[ x"${IMAGES}" != x"$OLD_IMAGES" ]]; then
+        if [ "${IMAGES}" != "$OLD_IMAGES" ]; then
 
             echo "镜像标签有变化，通过kubectl set进行升级"
             
