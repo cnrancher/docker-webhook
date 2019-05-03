@@ -69,13 +69,15 @@ EOF
 
 # 检查是否为测试消息。dockerhub在添加webhooks条目时会触发测试webhooks消息，以下判断排除此消息。
 
-if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo $DATA_SOURCD | \
-	jq '.repository | has("name")' ) == 'true' && $( echo $DATA_SOURCD | jq '.repository | has("namespace")' ) == 'true' ]]; then
+if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo $DATA_SOURCD | jq '.repository | has("name")' ) == 'true' && $( echo $DATA_SOURCD | jq '.repository | has("namespace")' ) == 'true' ]]; then
 
     # 判断仓库类型
 
     # Aliyun
     if echo $REPO_TYPE | grep -qwi "aliyun" ; then
+
+        echo "当前镜像仓库为: $REPO_TYPE"
+        echo "当前仓库网络类型为 $NET_TYPE" 
 
         # 判断是否存在升级的容器
 
@@ -85,9 +87,6 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             echo "没有容器$APP_CONTAINER，请检查配置"
             exit 1
         fi
-
-        echo "当前仓库类型为 $REPO_TYPE" 
-        echo "当前仓库网络类型为 $NET_TYPE" 
 
         IMAGES_TAG=$( echo $DATA_SOURCD | jq -r '.push_data.tag' )
         REPO_NAME=$( echo $DATA_SOURCD | jq -r '.repository.name' )
@@ -146,6 +145,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
     if echo $REPO_TYPE | grep -qwi "dockerhub" ; then
 
         # 判断是否存在升级的容器
+        echo "当前镜像仓库为: $REPO_TYPE"
 
         if kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -cr '.spec.template.spec.containers[].name' | grep -qiE $APP_CONTAINER ; then  
             echo "开始升级$APP_CONTAINER容器"
@@ -153,8 +153,6 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             echo "没有容器$APP_CONTAINER，请检查配置"
             exit 1
         fi
-
-        echo "当前仓库类型为 $REPO_TYPE"
 
         IMAGES_TAG=$( echo $DATA_SOURCD | jq -r '.push_data.tag' )
         REPO_NAME=$( echo $DATA_SOURCD | jq -r '.repository.name' )
@@ -200,6 +198,8 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
     if echo $REPO_TYPE | grep -qwi "custom" ; then
 
+        echo "当前镜像仓库为: $REPO_TYPE"
+
         # 判断是否存在升级的容器
         if kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -cr '.spec.template.spec.containers[].name' | grep -qiE $APP_CONTAINER ; then  
             echo "开始升级$APP_CONTAINER容器"
@@ -207,8 +207,6 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             echo "没有容器$APP_CONTAINER，请检查配置"
             exit 1
         fi
-
-        echo "当前仓库类型为 $REPO_TYPE"
 
         IMAGES_URL=$( echo $DATA_SOURCD | jq -r '.repository.repo_url' )
         IMAGES_NS=$( echo $DATA_SOURCD | jq -r '.repository.namespace' )
