@@ -110,7 +110,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
         # 如果镜像标签有改变，则直接通过kubectl set进行升级
 
-        if [ "${IMAGES}" != "$OLD_IMAGES" ]; then
+        if [ ${IMAGES} != $OLD_IMAGES ]; then
 
             echo "镜像有变化，通过kubectl set进行升级"
 
