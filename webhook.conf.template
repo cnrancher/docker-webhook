@@ -43,6 +43,11 @@
                 "name": "repo_type"
             },
             {
+                "envname": "NET_TYPE",
+                "source": "url",
+                "name": "net_type"
+            },
+            {
                 "envname": "MAIL_TO",
                 "source": "string",
                 "name": "<MAIL_TO>"

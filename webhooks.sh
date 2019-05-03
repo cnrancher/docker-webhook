@@ -5,6 +5,7 @@ APP_NS=$( echo $APP_NS | tr 'A-Z' 'a-z' )
 APP_WORKLOAD=$( echo $APP_WORKLOAD | tr 'A-Z' 'a-z' )
 APP_CONTAINER=$( echo $APP_CONTAINER | tr 'A-Z' 'a-z' )
 REPO_TYPE=$( echo $REPO_TYPE | tr 'A-Z' 'a-z' )
+NET_TYPE=$( echo $NET_TYPE | tr 'A-Z' 'a-z' )
 MAIL_TO=$( echo $MAIL_TO | tr 'A-Z' 'a-z' )
 
 MAIL_FROM=$( echo $MAIL_FROM | tr 'A-Z' 'a-z' )
@@ -70,17 +71,25 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
     # 判断仓库类型
 
-    # Aliyunhub
+    # Aliyun
     if echo $REPO_TYPE | grep -qwi "aliyun" ; then
 
-        echo "当前仓库类型为 $REPO_TYPE"
+        echo "当前仓库类型为 $REPO_TYPE" 
+        echo "当前仓库网络类型为 $NET_TYPE" 
         IMAGES_TAG=$( echo $DATA_SOURCD | jq -r '.push_data.tag' )
         REPO_NAME=$( echo $DATA_SOURCD | jq -r '.repository.name' )
         REPO_NS=$( echo $DATA_SOURCD | jq -r '.repository.namespace')
         REPO_REGION=$( echo $DATA_SOURCD | jq -r '.repository.region' )
         REPO_FULL_NAME=$( echo $DATA_SOURCD | jq -r '.repository.repo_full_name' )
 
-        IMAGES=$( echo "registry.$REPO_REGION.aliyuncs.com/$REPO_FULL_NAME:$IMAGES_TAG" )
+        if [[ x"${NET_TYPE}" == x"vpc" ]]; then
+            IMAGES=$( echo "registry-vpc.$REPO_REGION.aliyuncs.com/$REPO_FULL_NAME:$IMAGES_TAG" )
+        elif [[ x"${NET_TYPE}" == x"internal" ]]; then
+            IMAGES=$( echo "registry-internal.$REPO_REGION.aliyuncs.com/$REPO_FULL_NAME:$IMAGES_TAG" )
+        else
+            IMAGES=$( echo "registry.$REPO_REGION.aliyuncs.com/$REPO_FULL_NAME:$IMAGES_TAG" )
+        fi
+
         OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[].image' )
 
         # 判断镜像标签是否为latest，如果不是latest则直接通过kubectl set进行升级。
@@ -89,7 +98,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             echo "镜像标签不为latest,直接进行升级"
             kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record 2>&1 | tee $APP_NS-$APP_CONTAINER
 
-            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]] ; then
+            if [[ $MAIL_FROM != '' && $MAIL_TO != '' ]]; then
                 send_mail
             fi
 
@@ -132,7 +141,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
         fi
     fi
 
-    # Dockerhub
+    # Docker
     if echo $REPO_TYPE | grep -qwi "dockerhub" ; then
 
         echo "当前仓库类型为 $REPO_TYPE"
