@@ -31,7 +31,7 @@ RUN     apk add --no-cache curl wget vim bash jq inotify-tools net-tools tzdata 
 #RUN     wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v${DUMB_VERSION}/dumb-init_${DUMB_VERSION}_amd64 \
 #    &&  chmod +x /usr/local/bin/dumb-init 
 
-RUN     curl -L --silent -o /usr/local/bin/kubectl https://www.cnrancher.com/download/kubernetes/linux-amd64-v1.11.10-kubectl \
+RUN     curl -L --silent -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.11.10/bin/linux/amd64/kubectl \
     &&  chmod +x /usr/local/bin/kubectl
 
 VOLUME  /etc/webhook
