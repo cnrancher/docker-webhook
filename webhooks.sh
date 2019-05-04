@@ -71,22 +71,24 @@ EOF
 
 if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo $DATA_SOURCD | jq '.repository | has("name")' ) == 'true' && $( echo $DATA_SOURCD | jq '.repository | has("namespace")' ) == 'true' ]]; then
 
+    # 判断是否存在升级的容器
+
+    if kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -cr '.spec.template.spec.containers[].name' | grep -qiE $APP_CONTAINER ; then  
+        echo "开始升级$APP_CONTAINER容器"
+    else
+        echo "没有容器：$APP_CONTAINER，请检查配置"
+        exit 1
+    fi
+
+    OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r ".spec.template.spec.containers[] | select(.name == \"$APP_CONTAINER\") | .image" )
+
     # 判断仓库类型
 
     # Aliyun
     if echo $REPO_TYPE | grep -qwi "aliyun" ; then
 
-        echo "当前镜像仓库为: $REPO_TYPE"
+        echo "当前仓库类型为 $REPO_TYPE" 
         echo "当前仓库网络类型为 $NET_TYPE" 
-
-        # 判断是否存在升级的容器
-
-        if kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -cr '.spec.template.spec.containers[].name' | grep -qiE $APP_CONTAINER ; then  
-            echo "开始升级$APP_CONTAINER容器"
-        else
-            echo "没有容器$APP_CONTAINER，请检查配置"
-            exit 1
-        fi
 
         IMAGES_TAG=$( echo $DATA_SOURCD | jq -r '.push_data.tag' )
         REPO_NAME=$( echo $DATA_SOURCD | jq -r '.repository.name' )
@@ -105,12 +107,9 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             IMAGES=$( echo "registry.$REPO_REGION.aliyuncs.com/$REPO_FULL_NAME:$IMAGES_TAG" )
         fi
 
-        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER")'.image )
-        #OLD_IMAGES_TAG=$( echo $OLD_IMAGES | awk -F: '{print $2 }' )
-
         # 如果镜像标签有改变，则直接通过kubectl set进行升级
 
-        if [ ${IMAGES} != $OLD_IMAGES ]; then
+        if [[ x"${IMAGES}" != x"$OLD_IMAGES" ]]; then
 
             echo "镜像有变化，通过kubectl set进行升级"
 
@@ -126,7 +125,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             # 如果镜像标签没有改变，则检查镜像拉取策略，需要设置镜像拉取策略为Always才能触发重新拉取镜像。
             # 如果镜像拉取策略是Always，则在.spec.template.metadata.annotations中添加注释用来触发滚动更新。
 
-            echo "镜像标签未改变，添加注释进行滚动升级"
+            echo "镜像未改变，添加注释进行滚动升级"
  
             kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
             jq '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"imagePullPolicy": "Always"}' | \
@@ -144,15 +143,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
     if echo $REPO_TYPE | grep -qwi "dockerhub" ; then
 
-        # 判断是否存在升级的容器
-        echo "当前镜像仓库为: $REPO_TYPE"
-
-        if kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -cr '.spec.template.spec.containers[].name' | grep -qiE $APP_CONTAINER ; then  
-            echo "开始升级$APP_CONTAINER容器"
-        else
-            echo "没有容器$APP_CONTAINER，请检查配置"
-            exit 1
-        fi
+        echo "当前仓库类型为 $REPO_TYPE"
 
         IMAGES_TAG=$( echo $DATA_SOURCD | jq -r '.push_data.tag' )
         REPO_NAME=$( echo $DATA_SOURCD | jq -r '.repository.name' )
@@ -161,12 +152,9 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
         IMAGES=$( echo "$REPO_FULL_NAME/$IMAGES_TAG" )
 
-        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER")'.image )
-        #OLD_IMAGES_TAG=$( echo $OLD_IMAGES | awk -F: '{print $2 }' )
+        if [[ x"${IMAGES}" != x"$OLD_IMAGES" ]]; then
 
-        if [ "${IMAGES}" != "$OLD_IMAGES" ]; then
-
-            echo "镜像标签有变化，通过kubectl set进行升级"
+            echo "镜像有变化，通过kubectl set进行升级"
 
             kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record 2>&1 | tee $APP_NS-$APP_CONTAINER
 
@@ -177,10 +165,10 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             exit $?
         else
         	
-            # 如果镜像标签没有改变，则检查镜像拉取策略，需要设置镜像拉取策略为Always才能触发重新拉取镜像。
+            # 如果镜像没有改变，则检查镜像拉取策略，需要设置镜像拉取策略为Always才能触发重新拉取镜像。
             # 如果镜像拉取策略是Always，则在.spec.template.metadata.annotations中添加注释用来触发滚动更新。
 
-            echo "镜像标签未改变，添加注释进行滚动升级"
+            echo "镜像未改变，添加注释进行滚动升级"
  
             kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
             jq '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"imagePullPolicy": "Always"}' | \
@@ -200,14 +188,6 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
         echo "当前镜像仓库为: $REPO_TYPE"
 
-        # 判断是否存在升级的容器
-        if kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -cr '.spec.template.spec.containers[].name' | grep -qiE $APP_CONTAINER ; then  
-            echo "开始升级$APP_CONTAINER容器"
-        else
-            echo "没有容器$APP_CONTAINER，请检查配置"
-            exit 1
-        fi
-
         IMAGES_URL=$( echo $DATA_SOURCD | jq -r '.repository.repo_url' )
         IMAGES_NS=$( echo $DATA_SOURCD | jq -r '.repository.namespace' )
         IMAGES_NAME=$( echo $DATA_SOURCD | jq -r '.repository.name' )
@@ -215,12 +195,9 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
         IMAGES=$( echo "$IMAGES_URL/$IMAGES_NS/$IMAGES_NAME:$IMAGES_TAG" )
 
-        OLD_IMAGES=$( kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq -r '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER")'.image )
-        #OLD_IMAGES_TAG=$( echo $OLD_IMAGES | awk -F: '{print $2 }' )
+        if [[ x"${IMAGES}" != x"$OLD_IMAGES" ]]; then
 
-        if [ "${IMAGES}" != "$OLD_IMAGES" ]; then
-
-            echo "镜像标签有变化，通过kubectl set进行升级"
+            echo "镜像有变化，通过kubectl set进行升级"
             
             kubectl -n $APP_NS set image $APP_WORKLOAD $APP_CONTAINER=$IMAGES --record 2>&1 | tee $APP_NS-$APP_CONTAINER
 
@@ -231,10 +208,10 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
             exit $?
         else
         	
-            # 如果镜像标签没有改变，则检查镜像拉取策略，需要设置镜像拉取策略为Always才能触发重新拉取镜像。
+            # 如果镜像没有改变，则检查镜像拉取策略，需要设置镜像拉取策略为Always才能触发重新拉取镜像。
             # 如果镜像拉取策略是Always，则在.spec.template.metadata.annotations中添加注释用来触发滚动更新。
 
-            echo "镜像标签未改变，添加注释进行滚动升级"
+            echo "镜像未改变，添加注释进行滚动升级"
  
             kubectl -n $APP_NS get $APP_WORKLOAD -o json | \
             jq '.spec.template.spec.containers[] | select(.name == "$APP_CONTAINER") += {"imagePullPolicy": "Always"}' | \
