@@ -14,8 +14,7 @@ RUN     curl -L --silent -o webhook.tar.gz https://github.com/adnanh/webhook/arc
     &&  rm -rf /go
 
 FROM    alpine:3.8
-
-ENV     DUMB_VERSION 1.2.2
+ENV     KUBECTL_VERSION v1.15.1
 
 COPY    --from=build /usr/local/bin/webhook /usr/local/bin/webhook
 COPY    start.sh monitoring.sh webhooks.sh /
@@ -28,22 +27,12 @@ RUN     apk add --no-cache curl wget vim bash jq inotify-tools net-tools tzdata 
     &&  apk del tzdata \
     &&  rm -rf /var/cache/apk/*  
 
-#RUN     wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v${DUMB_VERSION}/dumb-init_${DUMB_VERSION}_amd64 \
-#    &&  chmod +x /usr/local/bin/dumb-init 
-
-RUN     curl -L --silent -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.11.10/bin/linux/amd64/kubectl \
+RUN     curl -L --silent -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl \
     &&  chmod +x /usr/local/bin/kubectl
 
 VOLUME  /etc/webhook
 WORKDIR /etc/webhook
 
 EXPOSE  9000
-
-#ENTRYPOINT  ["/usr/local/bin/webhook"]
-#CMD         ["-verbose", "-hooks=/etc/webhook/hooks.json", "-hotreload"]
-
-#ENTRYPOINT   ["dumb-init", "--"]
-
-#CMD          ["bash", "-c", "/start.sh "]
 
 ENTRYPOINT  ["/start.sh"]
