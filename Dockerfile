@@ -1,7 +1,5 @@
 FROM    golang:alpine3.8 AS build
-
 WORKDIR /go/src/github.com/adnanh/webhook
-
 ENV     WEBHOOK_VERSION 2.6.9
 
 RUN     apk add --update -t build-deps curl libc-dev gcc libgcc
