@@ -211,7 +211,7 @@ if [[ $( echo $DATA_SOURCD | jq '.push_data | has("tag")' ) == 'true' && $( echo
 
             echo "镜像未改变，添加注释进行滚动升级"
  
-            kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq "(.spec.template.spec.containers[] | select(.name==\"$APP_CONTAINER\") | .imagePullPolicy) |= \'Always\' " | \
+            kubectl -n $APP_NS get $APP_WORKLOAD -o json | jq '(.spec.template.spec.containers[] | select(.name=="$APP_CONTAINER") | .imagePullPolicy) |= "Always" ' | \
             jq --arg time $( date -Iseconds ) '.spec.template.metadata.annotations += {"webhooks/updateTimestamp": $time}' | \
             kubectl -n $APP_NS apply -f - 2>&1 | tee $APP_NS-$APP_CONTAINER
 
