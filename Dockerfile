@@ -1,4 +1,4 @@
-FROM    golang:alpine3.8 AS build
+FROM    golang:alpine3.10 AS build
 WORKDIR /go/src/github.com/adnanh/webhook
 ENV     WEBHOOK_VERSION 2.6.11
 
