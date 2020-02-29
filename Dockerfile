@@ -12,20 +12,19 @@ RUN     curl -L --silent -o webhook.tar.gz https://github.com/adnanh/webhook/arc
     &&  rm -rf /go
 
 FROM    alpine:3.10
-ENV     KUBECTL_VERSION v1.15.1
 
 COPY    --from=build /usr/local/bin/webhook /usr/local/bin/webhook
 COPY    start.sh monitoring.sh webhooks.sh /
 
 RUN     apk add --no-cache curl wget vim bash jq inotify-tools net-tools tzdata \
-    &&  chmod +x /start.sh /monitoring.sh /webhooks.sh \ 
+    &&  chmod +x /start.sh /monitoring.sh /webhooks.sh \
     &&  mkdir -p /etc/webhook/source \
     &&  touch /etc/webhook/hooks.json \
     &&  cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     &&  apk del tzdata \
-    &&  rm -rf /var/cache/apk/*  
+    &&  rm -rf /var/cache/apk/*
 
-RUN     curl -L --silent -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl \
+RUN     curl -LsS https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl \
     &&  chmod +x /usr/local/bin/kubectl
 
 VOLUME  /etc/webhook
