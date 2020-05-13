@@ -1,6 +1,6 @@
-FROM    golang:alpine3.10 AS build
+FROM    golang:alpine3.11 AS build
 WORKDIR /go/src/github.com/adnanh/webhook
-ENV     WEBHOOK_VERSION 2.6.11
+ENV     WEBHOOK_VERSION 2.7.0
 
 RUN     apk add --update -t build-deps curl libc-dev gcc libgcc
 RUN     curl -L --silent -o webhook.tar.gz https://github.com/adnanh/webhook/archive/${WEBHOOK_VERSION}.tar.gz \
@@ -11,7 +11,7 @@ RUN     curl -L --silent -o webhook.tar.gz https://github.com/adnanh/webhook/arc
     &&  rm -rf /var/cache/apk/* \
     &&  rm -rf /go
 
-FROM    alpine:3.10
+FROM    alpine:3.11
 
 COPY    --from=build /usr/local/bin/webhook /usr/local/bin/webhook
 COPY    start.sh monitoring.sh webhooks.sh /
