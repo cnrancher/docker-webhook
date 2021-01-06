@@ -16,7 +16,7 @@ FROM    alpine:3.11
 COPY    --from=build /usr/local/bin/webhook /usr/local/bin/webhook
 COPY    start.sh monitoring.sh webhooks.sh /
 
-RUN     apk add --no-cache curl wget vim bash jq inotify-tools net-tools tzdata \
+RUN     apk add --no-cache curl wget vim bash jq inotify-tools net-tools tzdata conntrack-tools \
     &&  chmod +x /start.sh /monitoring.sh /webhooks.sh \
     &&  mkdir -p /etc/webhook/source \
     &&  touch /etc/webhook/hooks.json \
